@@ -1,7 +1,6 @@
 SynthDef(\bend, {
   arg bend = 0, out = ~bendBus.index;
   bend = bend.lag2(0.02);
-  bend.poll;
   Out.kr(out, bend);
 }).add;
 
@@ -24,6 +23,7 @@ SynthDef(\compress, {
   chorusShape = [0, pi] + LFNoise2.kr(chorusSpeed * 0.25, mul: chorusShape * pi);
   combDelay = SinOsc.kr(chorusSpeed.dup, chorusShape);
   combDelay = (combDelay * chorusDepth).linexp(-1, 1, 0.005, 0.015);
+
   audio = LinSelectX.ar(chorusDepth, [audio, AllpassC.ar(audio.neg, 0.02, combDelay, decaytime: 0.05, mul: 1)]);
 
   // Apply a nice subtle room effect, and then delay the incoming audio.
@@ -41,29 +41,29 @@ SynthDef(\key, {
 		gate = 1,
 		vel = 64,
 		impulse = 0,
-		impulseFilter = 0,
-		impulseFilterVel = 1,
-		resonatorLevel = 1,
-		resonatorPitchShift = 0,
+		impulseFilter = 0.5,
+		impulseFilterVel = 0,
+		resonatorLevel = 0,
+		resonatorPitchShift = 1,
 		feedback = 0, // The amount of feedback fed back into the audio
-		feedbackHiCut = 1100, // The LPF on feedback
-		filterDrive = 10, // The drive in the filter section
-		filter = 10, // The MIDI note of the LPF freq
+		feedbackHiCut = 1, // The LPF on feedback
+		filterDrive = 2, // The drive in the filter section
+		filter = 40, // The MIDI note of the LPF freq
 		filterVel = 4, //
 		filterNote = -0.5,
-		filterEnv = 1,
+		filterEnv = 0,
 		lfo1Speed = 0,
 		lfo1Walk = 0,
-		lfo1Shape = 40,
-		lfo1Enter = 10,
+		lfo1Shape = 1,
+		lfo1Enter = 2,
 		vibratoDepth = 0,
-		tremoloDepth = 1,
+		tremoloDepth = 0,
 		panDepth = 0,
 		detune = 0.00,
 		hold = 0,
 		sustain = 10.5,
 		decay = 0.075,
-		harmonics = 0.5,
+		harmonics = 0,
 		invOctave = 0,
 		formant = 2,
 		formantDepth = 0,
@@ -147,7 +147,7 @@ SynthDef(\key, {
 
   // Add Formant
   formant = (formant + (formantNote * notePos) + (formantEnv * env)).midiratio;
-  formantAudio = BPF.ar(audio, min(20000, 880 * formant), 0.2, mul: 9);
+  formantAudio = BPF.ar(audio, (880 * formant).clip(30, 20000), 0.2, mul: 9);
   audio = LinSelectX.ar(formantDepth, [audio, formantAudio]);
 
   //Add low pass
