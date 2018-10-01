@@ -2,18 +2,20 @@
 	\sustain, \decay, \impulse, \impulseVel, \impulseFilter, \impulseFilterVel,
 	\harmonics, \filter, \filterDrive, \filterNote, \filterVel, \filterEnv,
 	\resonatorLevel, \resonatorPitchShift, \feedback, \feedbackHiCut,
-	\formant, \formantDepth, \formantEnv, \formantNote,
-	\lfo1Speed, \lfo1Shape, \lfo1Walk, \lfo1Enter, \vibratoDepth,
+	\formant, \formantDepth, \formantEnv, \formantNote, \envTime, \envShape,
+	\lfo1Speed, \lfo1Shape, \lfo1Walk, \lfo1Enter, \vibratoDepth, \tremoloDepth
 ];
 ~compressParams = [
-	\chorusDepth,
+	\chorusDepth, \chorusSpeed, \chorusShape,
+	\preGain, \postGain, \reverb, \bassBoost,
 ];
 
 if (~paramMap.isNil.not) {
 	~presetMap = ~paramMap.asPreset();
 };
 ~paramMap = SS2ParamMap[
-	\sustain -> SS2ParamContinuous(0.05, 20, 2)
+	\sustain -> SS2ParamInf(0.05, 20, 2)
+		.maxInf_(true)
 		.label_("Sustain")
 		.displayStrategy_(SS2ParamDisplay("sec"))
 		.value_(5),
@@ -48,10 +50,14 @@ if (~paramMap.isNil.not) {
 		.label_("Filter Drive")
 		.displayStrategy_(SS2ParamDisplayDb())
 		.value_(1),
-	\filterNote -> SS2ParamMirror(1, 2, 0.125)
+	\filterNote -> SS2ParamMirror(1)
 		.label_("Note>Filter")
 		.displayStrategy_(SS2ParamDisplayPercent().center())
-		.value_(-0.5),
+		.value_(-0.5)
+		.addObserver(SS2ParamActionObserver({
+			arg p;
+			[p, p.value, p.normalized, p.display];//.postln;
+		})),
 	\filterVel -> SS2ParamContinuous(1, 4)
 		.label_("Vel>Filter")
 		.displayStrategy_(SS2ParamDisplaySemitone())
@@ -66,7 +72,7 @@ if (~paramMap.isNil.not) {
 	\resonatorPitchShift -> SS2ParamContinuous(0.25, 16)
 		.label_("Reso Filter")
 		.displayStrategy_(SS2ParamDisplaySemitone())
-		.value_(1),
+		.value_(8),
 	\feedback -> SS2ParamDb(-inf, 6)
 		.label_("Feedback Level")
 		.db_(-inf),
@@ -80,21 +86,30 @@ if (~paramMap.isNil.not) {
 	\formant -> SS2ParamSemitone(-12, 48)
 		.label_("Formant Freq")
 		.value_(3),
-	\formantNote -> SS2ParamMirror(1, 1)
+	\formantNote -> SS2ParamContinuous(0, 1, 1)
 		.label_("Note>Formant")
-		.displayStrategy_(SS2ParamDisplayCenterable("st", scale: 48).center())
+		.displayStrategy_(SS2ParamDisplay("st", scale: 48))
 		.value_(0),
 	\formantEnv -> SS2ParamMirror(48, 3)
 		.label_("Env>Formant")
 		.displayStrategy_(SS2ParamDisplayCenterable("st").center())
 		.value_(0),
-	\vibratoDepth -> SS2ParamContinuous(0, 12)
-		.label_("Vibrato Depth")
+	\envTime -> SS2ParamContinuous(0.125, 10, 4)
+		.label_("Env Time")
+		.displayStrategy_(SS2ParamDisplay("sec"))
+		.value_(1),
+	\envShape -> SS2ParamContinuous(0, 1)
+		.label_("Env Shape")
+		.displayStrategy_(SS2ParamDisplayNormalized())
+		.value_(0.5),
+
+	\vibratoDepth -> SS2ParamContinuous(0, 12, 5)
+		.label_("Vibrato")
 		.displayStrategy_(SS2ParamDisplay("st"))
 		.value_(0),
 	\tremoloDepth -> SS2ParamContinuous(0, 1, 0)
-		.label_("Vibrato Depth")
-		.displayStrategy_(SS2ParamDisplay("st"))
+		.label_("Tremolo")
+		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0),
 	\lfo1Speed -> SS2ParamContinuous(0.5, 12, 1)
 		.label_("LFO Speed")
@@ -120,10 +135,31 @@ if (~paramMap.isNil.not) {
 		.label_("Chorus Depth")
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0),
+	\chorusSpeed -> SS2ParamContinuous(0.1, 15, 2)
+		.label_("Chorus Speed")
+		.displayStrategy_(SS2ParamDisplay("Hz"))
+		.value_(6),
+	\chorusShape -> SS2ParamContinuous(0, 1, 2)
+		.label_("Chorus Shape")
+		.displayStrategy_(SS2ParamDisplayPercent())
+		.value_(0),
+	\preGain -> SS2ParamDb(0, 48)
+		.label_("Pre Gain")
+		.db_(24),
+	\postGain -> SS2ParamDb(-12, 12)
+		.label_("Post Gain")
+		.db_(0),
+	\reverb -> SS2ParamContinuous(0, 1, -1)
+		.label_("Reverb")
+		.displayStrategy_(SS2ParamDisplayPercent())
+		.value_(0),
+	\bassBoost -> SS2ParamContinuous(0, 12)
+		.label_("Bass Boost")
+		.displayStrategy_(SS2ParamDisplay("dB"))
+		.value_(0),
+
 ];
 
-~paramMap.asArray.postln;
 if (~presetMap.isNil.not) {
 	~paramMap.import(~presetMap);
 };
-~paramMap.asArray.postln;

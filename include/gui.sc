@@ -5,9 +5,11 @@ var groups = [
 			\sustain,
 			\decay,
 			\impulse,
-			\impulseVel,
 			\impulseFilter,
-			\impulseFilterVel,
+			[
+				\impulseVel,
+				\impulseFilterVel,
+			]
 		],
 	],
 	Event[
@@ -16,8 +18,8 @@ var groups = [
 			\harmonics,
 			\filter,
 			\filterDrive,
-			\filterNote,
 			\filterVel,
+			\filterNote,
 			\filterEnv,
 		],
 	],
@@ -35,8 +37,12 @@ var groups = [
 		\params -> [
 			\formantDepth,
 			\formant,
-			\formantNote,
-			\formantEnv,
+			[
+				\formantNote,
+				\formantEnv,
+			],
+			\envShape,
+			\envTime,
 		],
 	],
 	Event[
@@ -47,12 +53,24 @@ var groups = [
 			\lfo1Walk,
 			\lfo1Enter,
 			\vibratoDepth,
+			\tremoloDepth,
 		],
 	],
 	Event[
 		\name -> "Chorus",
 		\params -> [
 			\chorusDepth,
+			\chorusSpeed,
+			\chorusShape,
+		],
+	],
+	Event[
+		\name -> "Postprocessing",
+		\params -> [
+			\preGain,
+			\reverb,
+			\bassBoost,
+			\postGain,
 		],
 	],
 ];
@@ -62,19 +80,35 @@ var groups = [
 var w;
 
 Window.closeAll;
-w = Window.new(bounds: 360@800).front;
+w = Window.new(bounds: 450@800).front;
 w.view.decorator=FlowLayout(w.view.bounds);
 w.view.decorator.gap=2@2;
 
 groups.do {
 	arg group;
-	var container;
+	var container, vc, layout;
+	var columns = [];
 	StaticText(w, 80@12).string_(group.name);
-	container = CompositeView(w, 450@84);
-	container.decorator = FlowLayout(container.bounds);
-	container.decorator.gap = 2@2;
+	// w.view.decorator.newline;
 	group[\params].do {
 		arg key;
-		~paramMap[key].addObserver(SS2ParamWidget(container));
+		if (key.isKindOf(Array)) {
+			var subcolumn = [];
+			key.do {
+				arg subkey;
+				var widget = SS2ParamSlider();
+				~paramMap[subkey].addObserver(widget);
+				subcolumn = subcolumn.add(widget.asView);
+			};
+			columns = columns.add(subcolumn);
+		} {
+			var widget = SS2ParamWidget();
+			~paramMap[key].addObserver(widget);
+			columns = columns.add([[widget.asView, rows: 2]]);
+		};
 	};
+
+	layout = GridLayout.columns(*columns).hSpacing_(0).vSpacing_(0);
+	container = CompositeView(w, (54 * group[\params].size)@96).layout_(layout);
+	postln(*columns);
 };

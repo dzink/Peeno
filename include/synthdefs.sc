@@ -11,27 +11,36 @@ SynthDef(\compress, {
 
 	// Save audioIn for later in parallel processing.
 	audioIn = In.ar(in + [0, 1]);
-	audio = audioIn * preGain;
+  audio = audioIn;
+  audio = Limiter.ar(audio * 0.25, 0.75, 0.005);
+	audio = (audio * preGain).softclip;
 
-	// Bass boost
-  audio = BLowShelf.ar(audio, 200, 5, bassBoost * 4);
+  // Bass boost
+  audio = BLowShelf.ar(audio, 300, 5, bassBoost);
 
-	// Compress and post gain.
-  audio = Compander.ar(audio, audio, 0.5, 1, 0.2, 0.05, 0.05) * postGain;
+  // compress
+  //audio = Compander.ar(audio, audio, 0.5, 1, 0.2, 0.02, 0.02);
+  //audio = Limiter.ar(audio, 0.75, 0.01);
 
 	// Chorus
   chorusShape = [0, pi] + LFNoise2.kr(chorusSpeed * 0.25, mul: chorusShape * pi);
   combDelay = SinOsc.kr(chorusSpeed.dup, chorusShape);
   combDelay = (combDelay * chorusDepth).linexp(-1, 1, 0.005, 0.015);
 
-  audio = LinSelectX.ar(chorusDepth, [audio, AllpassC.ar(audio.neg, 0.02, combDelay, decaytime: 0.05, mul: 1)]);
+  audio = LinSelectX.ar(chorusDepth, [audio, CombC.ar(audio.neg, 0.02, combDelay, decaytime: 0.05, mul: 1)]);
 
   // Apply a nice subtle room effect, and then delay the incoming audio.
   audio = DelayN.ar(audio, 0.03, 0.01) + FreeVerb2.ar(audio[0], audio[1], reverb.sqrt, reverb);
 
+
+  // Post gain.
+  audio = audio * postGain;
+
+
 	// Final processing - add in original signal in parallel if wanted.
 	audio = LinSelectX.ar(parallel, [audio, audioIn]);
-  audio = audio.softclip;
+  audio = Compander.ar(audio, audio, 0.85, 1, 0.05, 0.1, 0.1);
+  audio = Limiter.ar(audio, 1, 0.005);
   ReplaceOut.ar(out, (audio));
 }).add;
 
@@ -103,7 +112,7 @@ SynthDef(\key, {
 	// Envelopes
   env = EnvGen.kr(Env.new(
       [-1, 1, 0, -1],
-		  [0.5 * (1 - envShape), 1.25 * envShape, 0.5 * envShape],
+		  [(1 - envShape), envShape, 0.5 * envShape],
 		  4, 2 // curve of 4, loop at 2.
 	 ), gate, timeScale: envTime);
   gateEnv = env.range(0, 1);
@@ -114,7 +123,7 @@ SynthDef(\key, {
   feedbackAudio = (LocalIn.ar(2) * feedback * 0.018 * note.linlin(40, 79, 1, 1 - feedbackHiCut)).mean;
 
   //resonator = pink * resonatorLevel * 0.025 * SinOsc.kr(9 * LFNoise1.kr([0.25, 0.25]).range(0.8, 1.25)).range(0.5, 1) + feedbackAudio;
-  resonator = pink.dup * resonatorLevel * 0.05 + feedbackAudio * gateEnv;
+  resonator = pink.dup * resonatorLevel * 0.05 + feedbackAudio * gate;
   resonator = Compander.ar(resonator, resonator, 0.25, 1, 0.01).softclip;
 
   // Click & resonator don't need a stereo filter.
@@ -129,10 +138,11 @@ SynthDef(\key, {
 
   // Click last so it stays sharp
   resonator = resonator + impulseAudio;
-
-  // Karplus-Strong algorithm generates the actual pitch
+  // sustain = inf;
+  // Karplus-Strong algorithm generates the actual pitch. Inverse multiplies
+  // by 2 because an inverse resonator goes down one octave
   full = CombC.ar(resonator * gate, 0.025, (freq).reciprocal - SampleDur.ir, Select.kr(gate, [decay, sustain]));
-  inverse = CombC.ar(resonator * gate, 0.025, (freq * Select.kr(invOctave, [0.5, 1, 2, 4])).reciprocal - SampleDur.ir, -1 * Select.kr(gate, [decay, sustain]));
+  inverse = CombC.ar(resonator * gate, 0.025, (freq * 2).reciprocal - SampleDur.ir, -1 * Select.kr(gate, [decay, sustain]));
   audio = LinSelectX.ar(harmonics, [full, inverse]);
 
   // Add in the impulse post resonation
@@ -167,7 +177,8 @@ SynthDef(\pink, {
   arg chorusDepth = 0.2, chorusSpeed = 8, chorusShape = 0.5;
   var pink = PinkNoise.ar;
   var combDelay;
-  combDelay = SinOsc.kr(chorusSpeed.dup, [0, pi] + LFNoise2.kr(chorusSpeed.dup * 0.25, mul: chorusShape));  combDelay = combDelay.softclip.range(0.0, 0.005);
+  combDelay = SinOsc.kr(chorusSpeed.dup, [0, pi] + LFNoise2.kr(chorusSpeed.dup * 0.25, mul: chorusShape));
+  combDelay = combDelay.softclip.range(0.0, 0.005);
   pink = AllpassC.ar(pink, 0.02, combDelay, 0.1, mul: chorusDepth);
-  Out.ar(~pinkBus.index, PinkNoise.ar);
+  Out.ar(~pinkBus.index, pink);
 }).add;
