@@ -24,3 +24,17 @@ Event[
 	arg key, event;
 	~paramMap[key].addEvent(event)
 };
+
+MIDIFunc.bend({
+	arg val;
+	val.postln;
+	~bend.set(\bend, val.linlin(0, 16383, -1, 1));
+});
+
+MIDIFunc.cc({
+	arg val, num;
+	var r = Routine {
+		~paramMap[\chorusDepth].midi_(val);
+	};
+	AppClock.play(r);
+}, 1);

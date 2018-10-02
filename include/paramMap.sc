@@ -27,7 +27,7 @@ if (~paramMap.isNil.not) {
 		.label_("Impulse")
 		.value_(0),
 	\impulseVel -> SS2ParamDb(-inf, 6, 2)
-		.label_("Vel>Impulse")
+		.label_("Vel > Impulse")
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0),
 	\impulseFilter -> SS2ParamContinuous(-24, 48, 2)
@@ -35,9 +35,10 @@ if (~paramMap.isNil.not) {
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0),
 	\impulseFilterVel -> SS2ParamContinuous(0, 1)
-		.label_("Vel>Hard")
+		.label_("Vel > Hard")
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0.5),
+
 	\harmonics -> SS2ParamContinuous(0, 1)
 		.label_("Shape")
 		.displayStrategy_(SS2ParamDisplayPercent())
@@ -46,24 +47,24 @@ if (~paramMap.isNil.not) {
 		.label_("Filter Freq")
 		.displayStrategy_(SS2ParamDisplaySemitone())
 		.value_(4),
-	\filterDrive -> SS2ParamContinuous(1, 6.dbamp)
+	\filterDrive -> SS2ParamContinuous(1, 24.dbamp, 2)
 		.label_("Filter Drive")
 		.displayStrategy_(SS2ParamDisplayDb())
 		.value_(1),
 	\filterNote -> SS2ParamMirror(1)
-		.label_("Note>Filter")
+		.label_("Note > Filter Freq")
 		.displayStrategy_(SS2ParamDisplayPercent().center())
 		.value_(-0.5)
 		.addObserver(SS2ParamActionObserver({
 			arg p;
 			[p, p.value, p.normalized, p.display];//.postln;
 		})),
-	\filterVel -> SS2ParamContinuous(1, 4)
-		.label_("Vel>Filter")
+	\filterVel -> SS2ParamContinuous(1, 16)
+		.label_("Vel > Filter")
 		.displayStrategy_(SS2ParamDisplaySemitone())
 		.value_(1),
 	\filterEnv -> SS2ParamMirror(48, 3)
-		.label_("Env>Filter")
+		.label_("Env > Filter")
 		.displayStrategy_(SS2ParamDisplayCenterable("st").center())
 		.value_(0),
 	\resonatorLevel -> SS2ParamDb(-inf, 6)
@@ -87,11 +88,11 @@ if (~paramMap.isNil.not) {
 		.label_("Formant Freq")
 		.value_(3),
 	\formantNote -> SS2ParamContinuous(0, 1, 1)
-		.label_("Note>Formant")
+		.label_("Note > Formant")
 		.displayStrategy_(SS2ParamDisplay("st", scale: 48))
 		.value_(0),
 	\formantEnv -> SS2ParamMirror(48, 3)
-		.label_("Env>Formant")
+		.label_("Env > Formant")
 		.displayStrategy_(SS2ParamDisplayCenterable("st").center())
 		.value_(0),
 	\envTime -> SS2ParamContinuous(0.125, 10, 4)

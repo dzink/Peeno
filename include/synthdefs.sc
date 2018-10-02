@@ -32,6 +32,7 @@ SynthDef(\compress, {
   // Apply a nice subtle room effect, and then delay the incoming audio.
   audio = DelayN.ar(audio, 0.03, 0.01) + FreeVerb2.ar(audio[0], audio[1], reverb.sqrt, reverb);
 
+  audio = LeakDC.ar(audio);
 
   // Post gain.
   audio = audio * postGain;
@@ -39,7 +40,7 @@ SynthDef(\compress, {
 
 	// Final processing - add in original signal in parallel if wanted.
 	audio = LinSelectX.ar(parallel, [audio, audioIn]);
-  audio = Compander.ar(audio, audio, 0.85, 1, 0.05, 0.1, 0.1);
+  audio = Compander.ar(audio, audio, 0.5, 1, 0.05, 0.1, 0.1);
   audio = Limiter.ar(audio, 1, 0.005);
   ReplaceOut.ar(out, (audio));
 }).add;
@@ -118,7 +119,7 @@ SynthDef(\key, {
   gateEnv = env.range(0, 1);
 
 	// Store this for later attenuation.
-  driveMakeUp = filterDrive.sqrt;
+  driveMakeUp = 1;//filterDrive.sqrt;
 
   feedbackAudio = (LocalIn.ar(2) * feedback * 0.018 * note.linlin(40, 79, 1, 1 - feedbackHiCut)).mean;
 
@@ -130,7 +131,7 @@ SynthDef(\key, {
   impulseFreq = (impulseFilter + (impulseFilterVel * 36 * velScalar));
   impulseAudio = BPF.ar(pink * Trig.kr(gate, 0.01), min(20000, freq[0] * impulseFreq.round(6).midiratio)) * (vel / 256 + 0.5) * 2;
   impulseAudio = impulseAudio * (impulseFreq.clip(-24, -12) + 24 / 12);
-  resonator = BPF.ar(resonator, min(18000, freq[0] * resonatorPitchShift));
+  resonator = LPF.ar(resonator, min(18000, freq[0] * resonatorPitchShift));
 
   // Highpass both leaks out DC and removes dustiness from resonator.
 	// Do it now so that the low frequencies don't resonate.
@@ -138,11 +139,11 @@ SynthDef(\key, {
 
   // Click last so it stays sharp
   resonator = resonator + impulseAudio;
-  // sustain = inf;
+
   // Karplus-Strong algorithm generates the actual pitch. Inverse multiplies
   // by 2 because an inverse resonator goes down one octave
   full = CombC.ar(resonator * gate, 0.025, (freq).reciprocal - SampleDur.ir, Select.kr(gate, [decay, sustain]));
-  inverse = CombC.ar(resonator * gate, 0.025, (freq * 2).reciprocal - SampleDur.ir, -1 * Select.kr(gate, [decay, sustain]));
+  inverse = CombC.ar(resonator * gate, 0.025, (freq).reciprocal - SampleDur.ir, -1 * Select.kr(gate, [decay, sustain]));
   audio = LinSelectX.ar(harmonics, [full, inverse]);
 
   // Add in the impulse post resonation
@@ -165,7 +166,7 @@ SynthDef(\key, {
   audio = LPF.ar(audio, filterFreq, mul: 1);
 
   // Make up attenuation for the gain
-  audio = audio / driveMakeUp;
+  audio = LeakDC.ar(audio);
   LocalOut.ar(audio * 0.625);
   DetectSilence.ar(audio + (gate), doneAction: 2);
   Out.ar(0, audio);
@@ -173,7 +174,7 @@ SynthDef(\key, {
 
 
 // Pink Noise Generator; this UGen is expensive so only do it once then read from a bus.
-SynthDef(\pink, {
+~pink = SynthDef(\pink, {
   arg chorusDepth = 0.2, chorusSpeed = 8, chorusShape = 0.5;
   var pink = PinkNoise.ar;
   var combDelay;

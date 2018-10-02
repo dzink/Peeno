@@ -19,8 +19,10 @@ var groups = [
 			\filter,
 			\filterDrive,
 			\filterVel,
-			\filterNote,
-			\filterEnv,
+			[
+				\filterNote,
+				\filterEnv,
+			],
 		],
 	],
 	Event[
@@ -41,6 +43,11 @@ var groups = [
 				\formantNote,
 				\formantEnv,
 			],
+			\formant,
+			[
+				\formantNote,
+				\formantEnv,
+			],
 			\envShape,
 			\envTime,
 		],
@@ -50,8 +57,10 @@ var groups = [
 		\params -> [
 			\lfo1Speed,
 			\lfo1Shape,
-			\lfo1Walk,
-			\lfo1Enter,
+			[
+				\lfo1Walk,
+				\lfo1Enter,
+			],
 			\vibratoDepth,
 			\tremoloDepth,
 		],
@@ -80,7 +89,7 @@ var groups = [
 var w;
 
 Window.closeAll;
-w = Window.new(bounds: 450@800).front;
+w = Window.new("P~e~e~n~o", 550@800).front;
 w.view.decorator=FlowLayout(w.view.bounds);
 w.view.decorator.gap=2@2;
 
@@ -88,7 +97,9 @@ groups.do {
 	arg group;
 	var container, vc, layout;
 	var columns = [];
-	StaticText(w, 80@12).string_(group.name);
+
+	// StaticText(w, 80@12).string_(group.name);
+
 	// w.view.decorator.newline;
 	group[\params].do {
 		arg key;
@@ -96,19 +107,25 @@ groups.do {
 			var subcolumn = [];
 			key.do {
 				arg subkey;
-				var widget = SS2ParamSlider();
+				var widget = SS2ParamSlider(bounds: 64@32);
+
 				~paramMap[subkey].addObserver(widget);
 				subcolumn = subcolumn.add(widget.asView);
 			};
 			columns = columns.add(subcolumn);
 		} {
 			var widget = SS2ParamWidget();
+			widget.decorator.margin = 4@24;
+			widget.decorator.gap = 4@24;
 			~paramMap[key].addObserver(widget);
 			columns = columns.add([[widget.asView, rows: 2]]);
 		};
 	};
 
 	layout = GridLayout.columns(*columns).hSpacing_(0).vSpacing_(0);
-	container = CompositeView(w, (54 * group[\params].size)@96).layout_(layout);
-	postln(*columns);
+	container = CompositeView(w, (64 * group[\params].size)@72).layout_(layout);
+	layout.children.do {
+		arg child;
+		layout.setAlignment(child, \bottom);
+	}
 };

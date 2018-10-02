@@ -22,13 +22,21 @@ Routine {
 
 	(currentDir +/+ "include/synthdefs.sc").load();
 	(currentDir +/+ "include/paramMap.sc").load();
+
+	// s.sync; // Wait for synthdefs to load.
+
 	(currentDir +/+ "include/node.sc").load();
-	(currentDir +/+ "include/gui.sc").load();
 	(currentDir +/+ "include/midi.sc").load();
+	(currentDir +/+ "include/gui.sc").load();
+
 }.run;
 
 )
 
 (
 s.queryAllNodes;
+)
+
+(
+~paramMap.randomize(0.1);
 )
