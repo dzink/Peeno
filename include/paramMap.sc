@@ -39,10 +39,10 @@ if (~paramMap.isNil.not) {
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0.5),
 
-	\harmonics -> SS2ParamContinuous(0, 1)
+	\harmonics -> SS2ParamListValues.fromPairs([\sine, 0, \mix, 0.5, \square, 1])
 		.label_("Shape")
-		.displayStrategy_(SS2ParamDisplayPercent())
-		.value_(0.25),
+		.displayStrategy_(SS2ParamDisplayList())
+		.value_(0.5),
 	\filter -> SS2ParamContinuous(0.25, 64, 5)
 		.label_("Filter Freq")
 		.displayStrategy_(SS2ParamDisplaySemitone())
@@ -128,9 +128,6 @@ if (~paramMap.isNil.not) {
 		.label_("LFO Enter")
 		.displayStrategy_(SS2ParamDisplay("sec"))
 		.value_(0.5),
-
-
-
 
 	\chorusDepth -> SS2ParamContinuous(0, 1, 2)
 		.label_("Chorus Depth")

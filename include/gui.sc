@@ -9,7 +9,8 @@ var groups = [
 			[
 				\impulseVel,
 				\impulseFilterVel,
-			]
+			],
+			[	\harmonics, \sustain],
 		],
 	],
 	Event[
@@ -107,14 +108,23 @@ groups.do {
 			var subcolumn = [];
 			key.do {
 				arg subkey;
-				var widget = SS2ParamSlider(bounds: 64@32);
+				var widget = if (~paramMap[subkey].isKindOf(SS2ParamList)) {
+					SS2ParamSelect(bounds: 64@32);
+				} {
+					SS2ParamSlider(bounds: 64@32);
+				};
 
 				~paramMap[subkey].addObserver(widget);
 				subcolumn = subcolumn.add(widget.asView);
 			};
 			columns = columns.add(subcolumn);
 		} {
-			var widget = SS2ParamWidget();
+			var widget = if (~paramMap[key].isKindOf(SS2ParamList)) {
+				SS2ParamOptions();
+			} {
+				SS2ParamKnob();
+			};
+
 			widget.decorator.margin = 4@24;
 			widget.decorator.gap = 4@24;
 			~paramMap[key].addObserver(widget);
