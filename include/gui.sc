@@ -5,10 +5,10 @@ var groups = [
 			\sustain,
 			\decay,
 			\impulse,
-			\impulseFilter,
+			\hardness,
 			[
 				\impulseVel,
-				\impulseFilterVel,
+				\hardnessVel,
 			],
 			[	\harmonics, \sustain],
 		],
@@ -85,7 +85,7 @@ var groups = [
 	],
 ];
 
-// \sustain, \decay, \impulseFilter, \impulseFilterVel, \filter, \filterDrive, \filterNote, \filterVel, \filterEnv, \resonatorLevel
+// \sustain, \decay, \hardness, \hardnessVel, \filter, \filterDrive, \filterNote, \filterVel, \filterEnv, \resonatorLevel
 
 var w;
 

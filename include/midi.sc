@@ -33,8 +33,5 @@ MIDIFunc.bend({
 
 MIDIFunc.cc({
 	arg val, num;
-	var r = Routine {
-		~paramMap[\chorusDepth].midi_(val);
-	};
-	AppClock.play(r);
+	~mod.set(\mod, val.linlin(0, 127, -1, 1));
 }, 1);

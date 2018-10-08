@@ -1,5 +1,5 @@
 ~keyParams = [
-	\sustain, \decay, \impulse, \impulseVel, \impulseFilter, \impulseFilterVel,
+	\sustain, \decay, \impulse, \impulseVel, \hardness, \hardnessVel,
 	\harmonics, \filter, \filterDrive, \filterNote, \filterVel, \filterEnv,
 	\resonatorLevel, \resonatorPitchShift, \feedback, \feedbackHiCut,
 	\formant, \formantDepth, \formantEnv, \formantNote, \envTime, \envShape,
@@ -30,11 +30,11 @@ if (~paramMap.isNil.not) {
 		.label_("Vel > Impulse")
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0),
-	\impulseFilter -> SS2ParamContinuous(-24, 48, 2)
+	\hardness -> SS2ParamContinuous(-24, 48, 2)
 		.label_("Hardness")
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0),
-	\impulseFilterVel -> SS2ParamContinuous(0, 1)
+	\hardnessVel -> SS2ParamContinuous(0, 1)
 		.label_("Vel > Hard")
 		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0.5),
