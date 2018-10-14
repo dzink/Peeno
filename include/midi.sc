@@ -33,5 +33,5 @@ MIDIFunc.bend({
 
 MIDIFunc.cc({
 	arg val, num;
-	~mod.set(\mod, val.linlin(0, 127, -1, 1));
+	~mod.set(\bend, val.linlin(0, 127, -1, 1));
 }, 1);
