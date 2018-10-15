@@ -108,16 +108,16 @@ var groups = [
 			\chorusShape,
 		],
 	],
-	// Event[
-	// 	\name -> "Postprocessing",
-	// 	\params -> [
-	// 		\preGain,
-	// 		\reverb,
-	// 		\bassBoost,
-	// 		\bias,
-	// 		// \postGain,
-	// 	],
-	// ],
+	Event[
+		\name -> "Postprocessing",
+		\params -> [
+			\preGain,
+			\reverb,
+			\bassBoost,
+			\bias,
+			// \postGain,
+		],
+	],
 
 ];
 
@@ -173,7 +173,6 @@ groups.do {
 				} {
 					SS2ParamSlider(bounds: 64@32);
 				};
-
 				~paramMap[subkey].addObserver(widget);
 				subcolumn = subcolumn.add(widget.asView);
 			};

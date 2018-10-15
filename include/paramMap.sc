@@ -15,9 +15,11 @@ if (~keySources.isNil) {
 	\lfo1,
 	\lfo2,
 	\env1,
+	\trigRand,
 ];
 
 ~keyTargets = [
+	\none,
 	\freq,
 	\impulse,
 	\hardness,
@@ -55,7 +57,7 @@ if (~paramMap.isNil.not) {
 		.value_(0),
 	\detune -> SS2ParamSemitone(0, 1, 2)
 		.label_("Detune")
-		.convertFromRatio_(true)
+		.convertToRatio_(true)
 		.value_(0),
 	\osc2Note -> SS2ParamInf(0.05, 20, 2)
 		.maxInf_(true)
@@ -73,11 +75,11 @@ if (~paramMap.isNil.not) {
 		.value_(0),
 	\impulse -> SS2ParamDb(-inf, 6, 2)
 		.label_("Impulse")
-		.convertFromAmps_(true)
+		.convertToAmps_(true)
 		.value_(0),
 	\impulseVel -> SS2ParamDb(0, 6, 2)
 		.label_("Vel > Impulse")
-		.convertFromAmps_(true)
+		.convertToAmps_(true)
 		.value_(0),
 	\hardness -> SS2ParamContinuous(-24, 48, 2)
 		.label_("Hardness")
@@ -98,7 +100,7 @@ if (~paramMap.isNil.not) {
 		.value_(4),
 	\filterDrive -> SS2ParamDb(0, 24, 2)
 		.label_("Filter Drive")
-		.convertFromAmps_(true)
+		.convertToAmps_(true)
 		.value_(1),
 	\filterNote -> SS2ParamContinuous(0, 1)
 		.label_("Note > Filter Freq")
@@ -114,15 +116,16 @@ if (~paramMap.isNil.not) {
 		.value_(0),
 	\resonatorLevel -> SS2ParamDb(-inf, 6)
 		.label_("Reso Level")
-		.convertFromAmps_(true)
+		.convertToAmps_(true)
 		.db_(-inf),
 	\resonatorPitchShift -> SS2ParamSemitone(-24, 48)
 		.label_("Reso Filter")
-		.convertFromRatio_(true)
+		.convertToRatio_(true)
 		.displayStrategy_(SS2ParamDisplaySemitone())
 		.value_(8),
 	\feedback -> SS2ParamDb(-inf, 6)
 		.label_("Feedback Level")
+		.convertToAmps_(true)
 		.db_(-inf),
 	\feedbackHiCut -> SS2ParamContinuous(0, 1)
 		.label_("FeedHiCut")
@@ -130,7 +133,7 @@ if (~paramMap.isNil.not) {
 		.value_(0.5),
 	\formantDepth -> SS2ParamDb(-inf, 6, 1)
 		.label_("Formant Depth")
-		.convertFromAmps_(true)
+		.convertToAmps_(true)
 		.db_(-inf),
 	\formant -> SS2ParamSemitone(-12, 60)
 		.label_("Formant Freq")
@@ -215,12 +218,13 @@ if (~paramMap.isNil.not) {
 		.value_(0),
 	\preGain -> SS2ParamDb(0, 48)
 		.label_("Pre Gain")
-		.convertFromAmps_(true)
+		.convertToAmps_(true)
 		.db_(24),
-	// \postGain -> SS2ParamDb(-24, 24)
-	// 	.label_("Post Gain")
-	// 	.convertFromAmps_(true)
-	// 	.db_(0),
+	\postGain -> SS2ParamDb(-24, 24)
+		.label_("Post Gain")
+		.convertToAmps_(true)
+		.displayStrategy_(SS2ParamDisplayDb().centered_(true))
+		.db_(0),
 	\reverb -> SS2ParamContinuous(0, 1, -1)
 		.label_("Reverb")
 		.displayStrategy_(SS2ParamDisplayPercent())

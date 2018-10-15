@@ -1,34 +1,36 @@
 ~keySources = [
-  \note,
-  \vel,
-  \bend,
-  \mod,
-  \lfo1,
-  \lfo2,
-  \env1,
+	\note,
+	\vel,
+	\bend,
+	\mod,
+	\lfo1,
+	\lfo2,
+	\env1,
+	\trigRand,
 ];
 
 ~keyTargets = [
-  \freq,
-  \impulse,
-  \hardness,
-  \resonator,
-  \resonatorPitchShift,
-  \feedback,
-  \harmonics,
-  \filter,
-  \filterDrive,
-  \formant,
-  \formantDepth,
-  \lfo1Speed,
-  \lfo1Shape,
-  \lfo2Speed,
-  \lfo2Spread,
-  \vibratoDepth,
-  \tremoloDepth,
-  \envTime,
-  \pan,
-  \retrigger,
+	\none,
+	\freq,
+	\impulse,
+	\hardness,
+	\resonator,
+	\resonatorPitchShift,
+	\feedback,
+	\harmonics,
+	\filter,
+	\filterDrive,
+	\formant,
+	\formantDepth,
+	\lfo1Speed,
+	\lfo1Shape,
+	\lfo2Speed,
+	\lfo2Spread,
+	\vibratoDepth,
+	\tremoloDepth,
+	\envTime,
+	\pan,
+	\retrigger,
 ];
 
 SynthDef(\bend, {
@@ -73,13 +75,15 @@ SynthDef(\compress, {
 	// Final processing - add in original signal in parallel if wanted.
 	audio = LinSelectX.ar(parallel, [audio, audioIn]);
   audio = Compander.ar(audio, audio, 0.75, 1, 0.05, 1, 1);
-  audio = Limiter.ar(audio, 1, 0.005);
+  audio = Limiter.ar(audio * 4, 1, 0.005);
   ReplaceOut.ar(out, (audio));
 }).add;
 
 SynthDef(\key, {
   arg
 		note= 44,
+    baseNote = 0,
+    leftNote = 0,
 		gate = 1,
 		vel = 64,
     bendSteps = 2,
@@ -122,7 +126,7 @@ SynthDef(\key, {
     pan = 0,
 		dummy = 0;
   var freq, resonator, resonatorDecay, audio, feedbackAudio, formantAudio, filterFreq, pink, peak, env, gateEnv, retrigger;
-  var lfo1, lfo2, lfo2Phase, driveMakeUp;
+  var lfo1, lfo2, lfo2Phase, driveMakeUp, trigRand;
   var impulseAudio, impulseFreq;
   var full, inverse;
   var notePos = note - 63.5;
@@ -133,11 +137,13 @@ SynthDef(\key, {
   audio = SinOsc.ar(440) * 0.1;
   bend = In.kr(~bendBus);
   mod = In.kr(~modBus);
+  gate = gate * (1 - retrigger);
+  trigRand = TRand.kr(-1, 1, gate);
   m.writeSource(\bend, bend);
   m.writeSource(\mod, mod);
+  m.writeSource(\trigRand, trigRand);
   m.writeSource(\note, note.linlin(44, 108, 0, 1));
   m.writeSource(\vel, vel.linlin(0, 127, 0, 1));
-  gate = gate * (1 - retrigger);
 
   4.do {
     arg i;
@@ -185,9 +191,10 @@ SynthDef(\key, {
   note = note + (bend * bendSteps);
 
   // vibrato is mono
+  detune = 0;
   note = note + (lfo1[0] * vibratoDepth);
   note = note + TRand.kr(detune.neg.dup, detune.dup, gate).lag(0.1);
-  note = note + [0, 12];
+  note = note + baseNote + [0, leftNote];
   freq = note.midicps;
 
 	// Store this for later attenuation.
