@@ -1,57 +1,75 @@
 (
-// @TODO: I'd love to make this work but it doesn't seem to on any platform.
-var currentDir = "/Users/danzinkevich/Peeno/";
+	// @TODO: I'd love to make this work but it doesn't seem to on  any platform.
+	~currentDir = "/Users/danzinkevich/Peeno/";
 
-Routine {
-	var note = 64;
+	Routine {
+		var note = 64;
 
-	// Initialize server and buses.
-	if (s.serverRunning.not, {
-		var o = Server.local.options;
-		o.numAudioBusChannels = 64;
-		o.numControlBusChannels = 128;
-		o.memSize = 2**20;
-		o.numBuffers = 1024 * 16;
-		o.numInputBusChannels = 6;
-		o.numOutputBusChannels = 4;
-		MIDIIn.connectAll;
-		s.bootSync();
-		~keyBus = Bus.audio(s, 2);
-		~pinkBus = Bus.audio(s, 1);
-		~bendBus = Bus.control(s, 1);
-		~modBus = Bus.control(s, 1);
-	});
+		// Initialize server and buses.
+		if (s.serverRunning.not, {
+			var o = Server.local.options;
+			o.numAudioBusChannels = 64;
+			o.numControlBusChannels = 128;
+			o.memSize = 2**20;
+			o.numBuffers = 1024 * 16;
+			o.numInputBusChannels = 6;
+			o.numOutputBusChannels = 4;
+			MIDIIn.connectAll;
+			s.bootSync();
+			~keyBus = Bus.audio(s, 2);
+			~pinkBus = Bus.audio(s, 1);
+			~bendBus = Bus.control(s, 1);
+			~modBus = Bus.control(s, 1);
+		});
 
-	(currentDir +/+ "include/synthdefs.sc").load();
-	(currentDir +/+ "include/paramMap.sc").load();
-	(currentDir +/+ "include/gui.sc").load();
+		(~currentDir +/+ "include/synthdefs.sc").load();
+		(~currentDir +/+ "include/presets.sc").load();
+		(~currentDir +/+ "include/paramMap.sc").load();
+		(~currentDir +/+ "include/gui.sc").load();
 
-	s.sync;//0.5.wait;
+		s.sync;
 
-	(currentDir +/+ "include/node.sc").load();
-	(currentDir +/+ "include/midi.sc").load();
+		(~currentDir +/+ "include/node.sc").load();
+		(~currentDir +/+ "include/midi.sc").load();
 
 
 
-		//var note = 64;
-	// ~keys.killAll;
-	// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
-	note = note + 7;
-	// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
-	note = note + 7;
-	// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
-	// ~nodeWatcher.register(~keys[note], true);
-	~paramMap
-	// .setSymbol(\modSource0, \lfo2)
-	// .setSymbol(\modTarget0, \resonance)
-	// .setValue(\modAmount0, 0)
-	// .setValue(\lfo2Speed, 50)
-	// .setValue(\resonatorLevel, -inf)
-	;
-}.run;
-
+			//var note = 64;
+		// ~keys.killAll;
+		// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
+		note = note + 7;
+		// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
+		note = note + 7;
+		// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
+		// ~nodeWatcher.register(~keys[note], true);
+		// .setSymbol(\modSource0, \lfo2)
+		// .setSymbol(\modTarget0, \resonance)
+		// .setValue(\modAmount0, 0)
+		// .setValue(\lfo2Speed, 50)
+		// .setValue(\resonatorLevel, -inf)
+	}.run;
 )
 
+(
+	// SAVE
+	var symbol = \bassPop;
+	~presetsMap.putAndSave(symbol, ~paramMap);
+)
+
+(
+	// LOAD
+	var symbol = \railroad;
+	~paramMap.import(~presetsMap[symbol]);
+)
+
+(
+	// SHOW
+	~presetsMap.keys.asCompileString;
+)
+
+(
+~keys.killAll;
+)
 (
 ~paramMap[\modSource0].symbol_(\lfo1).value.postln;
 ~paramMap[\modTarget0].symbol_(\note).value.postln;
@@ -84,20 +102,28 @@ p.postln;
 );
 
 (
-// var p = SS2ParamMapPreset[\a -> 1, \b -> \sine];
-var p = SS2ParamMapPreset[('a' -> 7), ('c' -> 'sine')].migrateTimeStamp_("20171009023541");
+var symbol = \traction;
 var d = SS2ParamMapPresetDictionary("/Users/danzinkevich/Peeno/presets/").loadAll();
-d.put(\p, p).save(\p);
+~paramMap.import(d[symbol]);
+);
+
+(
+// var p = SS2ParamMapPreset[\a -> 1, \b -> \sine];
+// var p = SS2ParamMapPreset[('a' -> 7), ('c' -> 'sine')].migrateTimeStamp_("20171009023541");
+var symbol = \takeMyBreathAway;
+var p = ~paramMap.asPreset;
+var d = SS2ParamMapPresetDictionary("/Users/danzinkevich/Peeno/presets/").loadAll();
+d.put(symbol, p).save(symbol);
 // d.loadAll();
 // d[\p][\a] = 44;
 // d.save(\meoeoe);
 // d.loadAll();
 // d[\p].migrateDate
 // d;
-d.migrate("/Users/danzinkevich/Peeno/migrations/");
-d.saveAll();
+// d.migrate("/Users/danzinkevich/Peeno/migrations/");
+// d.saveAll();
 
-d.postln;
+// d.postln;
 // p.postln;
 
 )
@@ -107,7 +133,7 @@ SS2ParamMapPreset[\a -> 1, \c -> 'sine'].asCompileString.interpret.asCompileStri
 )
 
 (
-~paramMap[\harmonics].normalized_(0.75).value
+~paramMap[\resonatorPitchShift].conversionStrategy
 )
 
 (
@@ -146,3 +172,5 @@ play{
 (
 ~group.set(\lfo2Spread, -1)
 )
+
+[60, 90].midicps.reciprocal
