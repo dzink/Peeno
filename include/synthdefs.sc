@@ -27,9 +27,11 @@
 	\feedback,
 	\harmonics,
 	\filter,
+	\filterReso,
 	\filterDrive,
 	\formant,
 	\formantDepth,
+	\formantReso,
 	\env1Trigger,
 	\envTime,
 	\lfo1Speed,
@@ -130,6 +132,7 @@ SynthDef(\key, {
 		filter = 40, // The MIDI note of the LPF freq
 		filterVel = 4, //
 		filterNote = -0.5,
+		filterReso = 2,
 		filterEnv = 0,
 		lfo1Speed = 0,
 		lfo1Walk = 0,
@@ -143,6 +146,8 @@ SynthDef(\key, {
 		lfo3Slew = 0,
 		lfo4Speed = 1,
 		lfo4Slew = 0,
+		lfo4Width = 1,
+		lfo4Multi = 1,
 		lfo4Algo = 0,
 		t_lfo4Sync = 0,
 		vibratoDepth = 0,
@@ -157,6 +162,7 @@ SynthDef(\key, {
 		formant = 2,
 		formantDepth = 0,
 		formantNote = 0.5,
+		formantReso = 0.2,
 		formantEnv = 0,
 		envTime = 0.5,
 		envShape = 0,
@@ -166,7 +172,7 @@ SynthDef(\key, {
     pan = 0,
 		dummy = 0;
   var freq, noteOffset, resonator, resonatorDecay, audio, feedbackAudio, formantAudio, filterFreq, pink, peak, env, retrigger, env1Trigger;
-  var lfo1, lfo2, lfo2Phase, lfo3, lfo3Dust, lfo3Phasor, lfo3Trigger, lfo4, trigRand;
+  var lfo1, lfo2, lfo2Phase, lfo3, lfo3Dust, lfo3Phasor, lfo3Trigger, lfo4, doubleLfo4, lfo4Sine, trigRand;
   var impulseAudio, impulseFreq;
   var full, inverse;
   var bend, mod;
@@ -184,7 +190,7 @@ SynthDef(\key, {
 
 	retrigger = Trig1.kr(m.tapTarget(\retrigger), ControlDur.ir) + t_retrig;
   gate = gate * (1 - retrigger);
-  trigRand = TRand.kr(-1, 1, gate);
+  trigRand = TRand.kr(-1, 1, gate.at(0));
   m.writeSource(\trigRand, trigRand);
 
   ~modcount.do {
@@ -241,7 +247,10 @@ SynthDef(\key, {
 	t_lfo4Sync = Slope.kr(t_lfo4Sync + m.tapTarget(\lfo4Sync));
 
 	lfo4 = Phasor.kr(t_lfo4Sync, 2 * ControlDur.ir * lfo4Speed, -1, 1, -1);
-	lfo4 = Select.kr(lfo4Algo, [lfo4, lfo4.sign, (lfo4 - 0.3333333).sign, (lfo4 - 0.5).sign, (lfo4 - 0.75).sign, SinOsc.kr(0, lfo4 * pi)]);
+	lfo4 = lfo4.range(-1, 1 / lfo4Width).neg.clip(-1, 1);
+	doubleLfo4 = lfo4.range(-1, 3);
+	lfo4 = lfo4.range(-1, lfo4Multi * 2 - 1).wrap(-1, 1);
+	lfo4 = Select.kr(lfo4Algo, [lfo4, lfo4.sign, SinOsc.kr(0, lfo4 * pi), SinOsc.kr(0, (lfo4 + 0.5) * pi), doubleLfo4.fold(-1, 1)]);
 	lfo4 = lfo4.lag2(lfo4Slew);
 	m.writeSource(\lfo4, lfo4);
 
@@ -261,7 +270,7 @@ SynthDef(\key, {
 	note = note + m.tapTarget(\freq, 24) + [0, m.tapTarget(\leftNote, 24).at(0)];
 
 	// vibrato is mono
-	vibratoDepth = vibratoDepth *  m.tapTargetExponential(\vibratoDepth, 2);
+	vibratoDepth = (vibratoDepth *  m.tapTarget(\vibratoDepth, 6)).clip(0, 12);
 	note = note + (lfo1[0] * vibratoDepth);
 	freq = note.midicps;
 
@@ -302,7 +311,7 @@ SynthDef(\key, {
   // one (even only). @TODO Inverse drops pitch by an octave, do I care?
 	sustain = sustain * m.tapTargetExponential(\sustain, 4);
 	decay = decay * m.tapTargetExponential(\decay, 4);
-  harmonics = (harmonics + m.tapTarget(\harmonics, 2)).clip(0, 1);
+  harmonics = (harmonics + m.tapTarget(\harmonics, 1)).clip(0, 1);
   full = CombC.ar(resonator * gate, 0.025, (freq).reciprocal - SampleDur.ir, Select.kr(gate, [decay, sustain]));
   inverse = CombC.ar(resonator * gate, 0.025, (freq).reciprocal - SampleDur.ir, -1 * Select.kr(gate, [decay, sustain]));
   audio = LinSelectX.ar(harmonics, [full, inverse]);
@@ -315,8 +324,11 @@ SynthDef(\key, {
   m.connect(\env1, \formant, formantEnv);
   formant = (formant + m.tapTarget(\formant, 48)).midiratio;
   formant = (SelectX.kr(formantNote, [880, freq]) * formant).clip(30, 20000);
+
   formantDepth = (formantDepth + m.tapTarget(\formantDepth)).clip(0, 2);
-  formantAudio = BPF.ar(audio, formant.lag(0.03), 0.2, mul: 9);
+	formantReso = formantReso * m.tapTargetExponential(\formantReso, 0.5);
+	// formantReso.poll;
+  formantAudio = BPF.ar(audio, formant.lag(0.03), formantReso, mul: 9);
   audio = LinSelectX.ar(formantDepth, [audio, formantAudio]);
 
   // Saturate - clean up audio DC before driving it to prevent rectification.
@@ -325,6 +337,7 @@ SynthDef(\key, {
   audio = (audio * max(filterDrive, 1)).softclip;
 
   // Add trem after saturation so it doesn't get lost in the mix.
+	tremoloDepth = (tremoloDepth + m.tapTarget(\tremoloDepth)).clip(0, 1);
   audio = audio * lfo1.range(1, 1 - tremoloDepth);
 
   //Add low pass filter (finally!)
@@ -337,8 +350,9 @@ SynthDef(\key, {
 	// proccessing is saved.
 	// @TODO try two LPF in serial.
   filterFreq = min(20000, filterNote.linexp(0, 1, 110, freq) * filter);
+	filterReso = (filterReso + m.tapTarget(\filterReso)).clip(1, 4);
   // audio = LPF.ar(audio, filterFreq.poll, mul: 1);
-  audio = MoogFF.ar(audio, filterFreq, mul: 1);
+  audio = MoogFF.ar(audio, filterFreq, filterReso, mul: 1);
 
 	// Feedback out before applying amplitude modulations.
 	audio = LeakDC.ar(audio);

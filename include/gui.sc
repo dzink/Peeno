@@ -53,6 +53,7 @@ AppClock.play(Routine({
 			\params -> [
 				\harmonics,
 				\filter,
+				\filterReso,
 				[
 					\filterDrive,
 					\filterVel,
@@ -61,6 +62,9 @@ AppClock.play(Routine({
 					\filterNote,
 					\filterEnv,
 				],
+			],
+			\labelCut -> Event[
+				"Filter " -> "",
 			],
 		],
 		Event[
@@ -72,6 +76,9 @@ AppClock.play(Routine({
 				\feedback,
 				\feedbackHiCut,
 			],
+			\labelCut -> Event[
+				"Reso " -> "Sustain ",
+			],
 		],
 		Event[
 			\name -> "Formant",
@@ -79,10 +86,14 @@ AppClock.play(Routine({
 			\params -> [
 				\formantDepth,
 				\formant,
+				\formantReso,
 				[
 					\formantNote,
 					\formantEnv,
 				],
+			],
+			\labelCut -> Event[
+				"Formant " -> "",
 			],
 		],
 		Event[
@@ -104,6 +115,9 @@ AppClock.play(Routine({
 				\envShape,
 				\envTime,
 			],
+			\labelCut -> Event[
+				"Env " -> "",
+			],
 		],
 		Event[
 			\name -> "LFO 1 - Dynamics",
@@ -116,6 +130,9 @@ AppClock.play(Routine({
 					\lfo1Enter,
 				],
 			],
+			\labelCut -> Event[
+				"Lfo1 " -> "",
+			],
 		],
 		Event[
 			\name -> "LFO 2 - Stereo",
@@ -126,6 +143,9 @@ AppClock.play(Routine({
 					\lfo2Spread,
 					\lfo2StereoSpin,
 				],
+			],
+			\labelCut -> Event[
+				"Lfo2 " -> "",
 			],
 		],
 		Event[
@@ -138,16 +158,24 @@ AppClock.play(Routine({
 					\lfo3Algo,
 				],
 			],
+			\labelCut -> Event[
+				"Lfo3 " -> "",
+			],
 		],
 		Event[
 			\name -> "LFO 4 - Multiwave",
 			\color -> envColor,
 			\params -> [
 				\lfo4Speed,
+				\lfo4Width,
+				\lfo4Multi,
 				[
 					\lfo4Slew,
 					\lfo4Algo,
 				],
+			],
+			\labelCut -> Event[
+				"Lfo4 " -> "",
 			],
 		],
 		Event[
@@ -159,6 +187,9 @@ AppClock.play(Routine({
 					\chorusSpeed,
 					\chorusShape,
 				],
+			],
+			\labelCut -> Event[
+				"Chorus " -> "",
 			],
 		],
 		Event[
@@ -184,6 +215,9 @@ AppClock.play(Routine({
 					\delayPingPong,
 				]
 			],
+			\labelCut -> Event[
+				"Delay " -> "",
+			],
 		],
 	];
 
@@ -202,6 +236,10 @@ AppClock.play(Routine({
 				],
 				amount,
 			],
+			\labelCut -> Event[
+				"Mod " -> "",
+				(" " ++ i) -> "",
+			],
 			// \nextLine -> (i == 0),
 		]);
 	};
@@ -210,7 +248,7 @@ AppClock.play(Routine({
 
 
 	Window.closeAll;
-	w = Window.new("P~e~e~n~o", 550@800).front;
+	w = Window.new("P~e~e~n~o", 650@800).front;
 	w.view.decorator=FlowLayout(w.view.bounds);
 	w.view.decorator.gap=2@2;
 
@@ -228,6 +266,7 @@ AppClock.play(Routine({
 				key.do {
 					arg subkey;
 					var widget;
+					var label;
 					widget = if (~paramMap[subkey].isKindOf(SS2ParamList)) {
 						SS2ParamSelect();
 					} {
@@ -242,7 +281,17 @@ AppClock.play(Routine({
 						};
 					};
 					if (widget.isKindOf(SS2ParamWidget)) {
+						var label;
 						~paramMap[subkey].addObserver(widget);
+						label = widget.label().asString();
+						if (group[\labelCut].isNil.not) {
+							group[\labelCut].keysValuesDo {
+								arg find, replacement;
+								label = label.replace(find, replacement);
+							};
+							widget.label = label;
+						};
+						widget.label = label;
 					};
 					subcolumn = subcolumn.add(widget.asView);
 				};
@@ -255,9 +304,20 @@ AppClock.play(Routine({
 					knob;
 				};
 
-				widget.decorator.margin = 4@24;
-				widget.decorator.gap = 4@24;
-				~paramMap[key].addObserver(widget);
+				// widget.decorator.margin = 4@24;
+				// widget.decorator.gap = 4@24;
+				if (widget.isKindOf(SS2ParamWidget)) {
+					var label;
+					~paramMap[key].addObserver(widget);
+					label = widget.label().asString();
+					if (group[\labelCut].isNil.not) {
+						group[\labelCut].keysValuesDo {
+							arg find, replacement;
+							label = label.replace(find, replacement);
+						};
+					};
+					widget.label = label;
+				};
 				columns = columns.add([[widget.asView, rows: 2]]);
 			};
 		};

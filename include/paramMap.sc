@@ -1,5 +1,5 @@
 ~keyParams = [
-	\baseNote, \leftNote, \detune, \bendSteps, \portamento, \sustain, \decay, \impulse, \impulseVel, \hardness, \hardnessVel, \harmonics, \filter, \filterDrive, \filterNote, \filterVel, \filterEnv, \resonatorLevel, \resonatorPitchShift, \feedback, \feedbackHiCut, \formant, \formantDepth, \formantEnv, \formantNote, \envTime, \envShape, \lfo1Speed, \lfo1Shape, \lfo1Walk, \lfo1Enter, \lfo2Speed, \lfo2Spread, \lfo2StereoSpin, \lfo3Speed, \lfo3Algo, \lfo3Slew, \lfo4Speed, \lfo4Slew, \lfo4Algo, \vibratoDepth, \tremoloDepth, \amp, \pan, \panAlgo,
+	\baseNote, \leftNote, \detune, \bendSteps, \portamento, \sustain, \decay, \impulse, \impulseVel, \hardness, \hardnessVel, \harmonics, \filter, \filterDrive, \filterNote, \filterReso, \filterVel, \filterEnv, \resonatorLevel, \resonatorPitchShift, \feedback, \feedbackHiCut, \formant, \formantDepth, \formantReso, \formantEnv, \formantNote, \envTime, \envShape, \lfo1Speed, \lfo1Shape, \lfo1Walk, \lfo1Enter, \lfo2Speed, \lfo2Spread, \lfo2StereoSpin, \lfo3Speed, \lfo3Algo, \lfo3Slew, \lfo4Speed, \lfo4Slew, \lfo4Width, \lfo4Multi, \lfo4Algo, \vibratoDepth, \tremoloDepth, \amp, \pan, \panAlgo,
 ];
 ~compressParams = [
 	\chorusDepth, \chorusSpeed, \chorusShape,
@@ -7,55 +7,21 @@
 	\delayMix, \delayTime, \delayRegen, \delayPingPong,
 ];
 
-if (~keySources.isNil) {
-~keySources = [
-	\note,
-	\vel,
-	\bend,
-	\mod,
-	\lfo1,
-	\lfo2,
-	\env1,
-	\trigRand,
-];
-
-~keyTargets = [
-	\none,
-	\freq,
-	\impulse,
-	\hardness,
-	\resonator,
-	\resonatorPitchShift,
-	\feedback,
-	\harmonics,
-	\filter,
-	\filterDrive,
-	\formant,
-	\formantDepth,
-	\lfo1Speed,
-	\lfo1Shape,
-	\lfo2Speed,
-	\lfo2Spread,
-	\vibratoDepth,
-	\tremoloDepth,
-	\envTime,
-	\pan,
-	\retrigger,
-];
-};
-
 if (~paramMap.isNil.not) {
 	~presetMap = ~paramMap.asPreset();
 };
 ~paramMap = SS2ParamMap[
 	\voice -> SS2ParamList([\mono, \poly])
 		.label_("Mono/Poly")
-		.symbol_(\poly),
+		.symbol_(\poly)
+		.addObserver(SS2ParamActionObserver({
+			~group.freeAll;
+		})),
 	\baseNote -> SS2ParamMirror(24, 2)
 		.label_("Base")
 		.displayStrategy_(SS2ParamDisplaySemitone().center())
 		.value_(0),
-	\leftNote -> SS2ParamMirror(24, 2)
+	\leftNote -> SS2ParamMirror(24, 4)
 		.label_("Left Note")
 		.displayStrategy_(SS2ParamDisplaySemitone())
 		.value_(0),
@@ -112,16 +78,19 @@ if (~paramMap.isNil.not) {
 		.label_("Filter Drive")
 		.convertToAmps_(true)
 		.value_(1),
-	\filterNote -> SS2ParamMirror(1)
+	\filterReso -> SS2ParamContinuous(1, 4, 2)
+		.label_("Filter Reso")
+		.value_(2),
+	\filterNote -> SS2ParamContinuous(0, 1)
 		.label_("Note > Filter Freq")
 		.displayStrategy_(SS2ParamDisplayPercent().center())
 		.value_(0),
 	\filterVel -> SS2ParamContinuous(0, 1)
-		.label_("Vel > Filter")
+		.label_("Vel > Filter Freq")
 		.displayStrategy_(SS2ParamDisplaySemitone(scale: 48))
 		.value_(0.25),
 	\filterEnv -> SS2ParamMirror(1, 2)
-		.label_("Env > Filter")
+		.label_("Env > Filter Freq")
 		.displayStrategy_(SS2ParamDisplaySemitone(scale: 48).center())
 		.value_(0),
 	\resonatorLevel -> SS2ParamDb(-inf, 6)
@@ -148,12 +117,16 @@ if (~paramMap.isNil.not) {
 	\formant -> SS2ParamSemitone(-12, 60)
 		.label_("Formant Freq")
 		.value_(60),
+	\formantReso -> SS2ParamContinuous(0.8, 0.005, \exp)
+		.label_("Formant Reso")
+		.displayStrategy_(SS2ParamDisplayPercent())
+		.value_(0.2),
 	\formantNote -> SS2ParamContinuous(0, 1, 1)
-		.label_("Note > Formant")
+		.label_("Note > Formant Freq")
 		.displayStrategy_(SS2ParamDisplaySemitone(scale: 48))
 		.value_(0),
 	\formantEnv -> SS2ParamMirror(1, 3)
-		.label_("Env > Formant")
+		.label_("Env > Formant Freq")
 		.displayStrategy_(SS2ParamDisplaySemitone(scale: 48).center())
 		.value_(0),
 	\envTime -> SS2ParamContinuous(0.01, 10, \exp)
@@ -215,11 +188,19 @@ if (~paramMap.isNil.not) {
 		.label_("Lfo4 Speed")
 		.displayStrategy_(SS2ParamDisplay("Hz"))
 		.value_(0),
-	\lfo4Slew -> SS2ParamContinuous(0.01, 1, 4)
+	\lfo4Slew -> SS2ParamContinuous(0.0, 1, 4)
 		.label_("Lfo4 Slew")
 		.displayStrategy_(SS2ParamDisplay("sec"))
 		.value_(5),
-	\lfo4Algo -> SS2ParamList([\saw, \square, \thirdSquare, \quarterSquare, \eigthSquare, \sine])
+	\lfo4Width -> SS2ParamContinuous(0.01, 0.99, 0)
+		.label_("Lfo4 Width")
+		.displayStrategy_(SS2ParamDisplayPercent())
+		.value_(1),
+	\lfo4Multi -> SS2ParamContinuous(1, 8, 0, 1)
+		.label_("Lfo4 Multi")
+		.displayStrategy_(SS2ParamDisplay("x"))
+		.value_(1),
+	\lfo4Algo -> SS2ParamList([\saw, \square, \sine, \cosine, \triangle])
 		.label_("Lfo4 Algo")
 		.displayStrategy_(SS2ParamDisplayList())
 		.value_(0),
@@ -265,7 +246,7 @@ if (~paramMap.isNil.not) {
 	\bassBoost -> SS2ParamDb(0, 12)
 		.label_("Bass Boost")
 		.value_(1),
-	\bias -> SS2ParamContinuous(20, 100)
+	\bias -> SS2ParamContinuous(50, 110, 1)
 		.label_("Bias")
 		.displayStrategy_(SS2ParamDisplaySemitone())
 		.value_(70),

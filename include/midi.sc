@@ -19,7 +19,7 @@ MIDIFunc.noteOn({
 	};
 	~keys.playOrRetrigger(mapSymbol, \key, nodeArgs, retrigArgs, ~group);
 	~nodeWatcher.register(~keys[mapSymbol].node, true);
-}, chan: 0);
+}, chan: [0,1]);
 
 MIDIFunc.noteOff({
 	arg vel, note;
@@ -37,7 +37,7 @@ MIDIFunc.noteOff({
 	} {
 		~keys.set(note, [\gate, 0]);
 	};
-}, chan: 0);
+}, chan: [0,1]);
 
 Event[
 	\sustain -> SS2MidiFunc.cc(13),

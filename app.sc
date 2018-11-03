@@ -36,11 +36,12 @@
 
 			//var note = 64;
 		// ~keys.killAll;
-		// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
+	~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
 		note = note + 7;
 		// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
+	3.wait;
 		note = note + 7;
-		// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
+	// ~keys.play(note, \key, ~paramMap.asArray(~keyParams).addAll([\note, note, \gate, 1, \vel, 1]);, ~group);
 		// ~nodeWatcher.register(~keys[note], true);
 		// .setSymbol(\modSource0, \lfo2)
 		// .setSymbol(\modTarget0, \resonance)
@@ -52,13 +53,13 @@
 
 (
 	// SAVE
-	var symbol = \bassPop;
+	var symbol = \feedbackMachine;
 	~presetsMap.putAndSave(symbol, ~paramMap);
 )
 
 (
 	// LOAD
-	var symbol = \railroad;
+	var symbol = \sweetPing;
 	~paramMap.import(~presetsMap[symbol]);
 )
 
@@ -156,6 +157,23 @@ panSets.do {
 	arg pan;
 	[pan, ([-1, 1] + (pan * 2)).clip(-1, 1)].postln;
 };
+
+)
+
+(
+MIDIFunc.trace(true);
+)
+
+(
+-1 / [0.01, 0.5, 1];
+)
+
+(
+play{ SinOscFB.kr(MouseX.kr(30, 90).midicps, MouseY.kr(0, 4)); }
+)
+
+(
+MIDIFunc.trace(true);
 )
 
 (
