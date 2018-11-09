@@ -9,15 +9,7 @@
 ~nodeWatcher.register(RootNode(s));
 ~nodeWatcher.register(~group);
 
-// Add to groups
-~keyParams.do {
-	arg key;
-	~paramMap[key].addObserver(SS2ParamNodeObserver(~group, key));
-};
+s.sync;
 
-// Add to controls
-~compressParams.do {
-	arg key;
-	~paramMap[key].addObserver(SS2ParamNodeObserver(~compress, key));
-	~group.set(key, ~paramMap[key].value);
-};
+~paramMap.linkToNode(~group, ~keyParams);
+~paramMap.linkToNode(~compress, ~compressParams);

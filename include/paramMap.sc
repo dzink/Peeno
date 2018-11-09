@@ -1,5 +1,5 @@
 ~keyParams = [
-	\baseNote, \leftNote, \detune, \bendSteps, \portamento, \sustain, \decay, \impulse, \impulseVel, \hardness, \hardnessVel, \harmonics, \filter, \filterDrive, \filterNote, \filterReso, \filterVel, \filterEnv, \resonatorLevel, \resonatorPitchShift, \feedback, \feedbackHiCut, \formant, \formantDepth, \formantReso, \formantEnv, \formantNote, \envTime, \envShape, \lfo1Speed, \lfo1Shape, \lfo1Walk, \lfo1Enter, \lfo2Speed, \lfo2Spread, \lfo2StereoSpin, \lfo3Speed, \lfo3Algo, \lfo3Slew, \lfo4Speed, \lfo4Slew, \lfo4Width, \lfo4Multi, \lfo4Algo, \vibratoDepth, \tremoloDepth, \amp, \pan, \panAlgo,
+	\baseNote, \leftNote, \detune, \bendSteps, \portamento, \sustain, \decay, \impulse, \impulseVel, \hardness, \hardnessVel, \harmonics, \filter, \filterDrive, \filterNote, \filterReso, \filterVel, \filterEnv, \resonatorLevel, \resonatorPitchShift, \feedback, \feedbackHiCut, \formant, \formantDepth, \formantReso, \formantEnv, \formantNote, \envTime, \envShape, \lfo1Speed, \lfo1Algo, \lfo1Slew, \lfo1Walk, \lfo1Enter, \lfo2Speed, \lfo2Spread, \lfo2StereoSpin, \lfo3Speed, \lfo3Algo, \lfo3Slew, \lfo4Speed, \lfo4Slew, \lfo4Width, \lfo4Multi, \lfo4Algo, \eucSpeed, \eucStep, \eucLength, \eucInner, \vibratoDepth, \tremoloDepth, \amp, \pan, \panAlgo,
 ];
 ~compressParams = [
 	\chorusDepth, \chorusSpeed, \chorusShape,
@@ -70,11 +70,11 @@ if (~paramMap.isNil.not) {
 		.label_("Shape")
 		.displayStrategy_(SS2ParamDisplayPercent().center())
 		.value_(0.5),
-	\filter -> SS2ParamSemitone(-12, 84, 1)
+	\filter -> SS2ParamSemitone(-12, 120, 2)
 		.label_("Filter Freq")
 		.displayStrategy_(SS2ParamDisplaySemitone())
 		.value_(84),
-	\filterDrive -> SS2ParamDb(0, 24, 2)
+	\filterDrive -> SS2ParamDb(0, 180, 2)
 		.label_("Filter Drive")
 		.convertToAmps_(true)
 		.value_(1),
@@ -149,10 +149,14 @@ if (~paramMap.isNil.not) {
 		.label_("Lfo1 Speed")
 		.displayStrategy_(SS2ParamDisplay("Hz"))
 		.value_(5),
-	\lfo1Shape -> SS2ParamContinuous(1, 160, 4)
+	\lfo1Algo -> SS2ParamList([\sine, \square, \pulse,])
 		.label_("Lfo1 Shape")
-		.displayStrategy_(SS2ParamDisplayNormalized())
-		.value_(0.5),
+		.displayStrategy_(SS2ParamDisplayList())
+		.value_(0),
+	\lfo1Slew -> SS2ParamContinuous(0, 1, 4)
+		.label_("Lfo1 Slew")
+		.displayStrategy_(SS2ParamDisplayPercent())
+		.value_(0),
 	\lfo1Walk -> SS2ParamContinuous(0, 1, 3)
 		.label_("Lfo1 Walk")
 		.displayStrategy_(SS2ParamDisplayPercent())
@@ -170,7 +174,7 @@ if (~paramMap.isNil.not) {
 		.displayStrategy_(SS2ParamDisplayPercent(scale: 50).center())
 		.value_(0),
 	\lfo2StereoSpin -> SS2ParamList([\phase, \spin])
-		.label_("Lfo2 Algo")
+		.label_("Lfo2 SpreadType")
 		.value_(0),
 	\lfo3Speed -> SS2ParamContinuous(0.25, 20, \exp)
 		.label_("Lfo3 Speed")
@@ -178,7 +182,7 @@ if (~paramMap.isNil.not) {
 		.value_(5),
 	\lfo3Slew -> SS2ParamContinuous(0, 1, 4)
 		.label_("Lfo3 Slew")
-		.displayStrategy_(SS2ParamDisplay("sec"))
+		.displayStrategy_(SS2ParamDisplayPercent())
 		.value_(0),
 	\lfo3Algo -> SS2ParamList([\steady, \stereoSteady, \dust, \stereoDust])
 		.label_("Lfo3 Trigger")
@@ -190,8 +194,8 @@ if (~paramMap.isNil.not) {
 		.value_(0),
 	\lfo4Slew -> SS2ParamContinuous(0.0, 1, 4)
 		.label_("Lfo4 Slew")
-		.displayStrategy_(SS2ParamDisplay("sec"))
-		.value_(5),
+		.displayStrategy_(SS2ParamDisplayPercent())
+		.value_(0),
 	\lfo4Width -> SS2ParamContinuous(0.01, 0.99, 0)
 		.label_("Lfo4 Width")
 		.displayStrategy_(SS2ParamDisplayPercent())
@@ -200,10 +204,26 @@ if (~paramMap.isNil.not) {
 		.label_("Lfo4 Multi")
 		.displayStrategy_(SS2ParamDisplay("x"))
 		.value_(1),
-	\lfo4Algo -> SS2ParamList([\saw, \square, \sine, \cosine, \triangle])
-		.label_("Lfo4 Algo")
+	\lfo4Algo -> SS2ParamList([\saw, \square, \sine, \cosine, \triangle, \random, \stereoRandom,])
+		.label_("Lfo4 Shape")
 		.displayStrategy_(SS2ParamDisplayList())
 		.value_(0),
+	\eucSpeed -> SS2ParamContinuous(0.2, 20, \exp)
+		.label_("Euc Speed")
+		.displayStrategy_(SS2ParamDisplay("Hz"))
+		.value_(0),
+	\eucLength -> SS2ParamContinuous(1, 16, 0, 1)
+		.label_("Euc Length")
+		.displayStrategy_(SS2ParamDisplay(" steps"))
+		.value_(8),
+	\eucStep -> SS2ParamContinuous(1, 8, 0, 1)
+		.label_("Euc Steps")
+		.displayStrategy_(SS2ParamDisplay(" steps"))
+		.value_(1),
+	\eucInner -> SS2ParamContinuous(1, 16, 0, 1)
+		.label_("Euc Inner")
+		.displayStrategy_(SS2ParamDisplay(" steps"))
+		.value_(3),
 
 	\amp -> SS2ParamDb(-inf, 0)
 		.label_("Volume")

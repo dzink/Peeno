@@ -53,9 +53,8 @@ AppClock.play(Routine({
 			\params -> [
 				\harmonics,
 				\filter,
-				\filterReso,
 				[
-					\filterDrive,
+					\filterReso,
 					\filterVel,
 				],
 				[
@@ -80,24 +79,24 @@ AppClock.play(Routine({
 				"Reso " -> "Sustain ",
 			],
 		],
+		// Event[
+		// 	\name -> "Formant",
+		// 	\color -> toneColor,
+		// 	\params -> [
+		// 		\formantDepth,
+		// 		\formant,
+		// 		\formantReso,
+		// 		[
+		// 			\formantNote,
+		// 			\formantEnv,
+		// 		],
+		// 	],
+		// 	\labelCut -> Event[
+		// 		"Formant " -> "",
+		// 	],
+		// ],
 		Event[
-			\name -> "Formant",
-			\color -> toneColor,
-			\params -> [
-				\formantDepth,
-				\formant,
-				\formantReso,
-				[
-					\formantNote,
-					\formantEnv,
-				],
-			],
-			\labelCut -> Event[
-				"Formant " -> "",
-			],
-		],
-		Event[
-			\name -> "Pan",
+			\name -> "Volume/Pan",
 			\color -> toneColor,
 			\params -> [
 				\amp,
@@ -124,7 +123,10 @@ AppClock.play(Routine({
 			\color -> envColor,
 			\params -> [
 				\lfo1Speed,
-				\lfo1Shape,
+				[
+					\lfo1Slew,
+					\lfo1Algo,
+				],
 				[
 					\lfo1Walk,
 					\lfo1Enter,
@@ -167,15 +169,30 @@ AppClock.play(Routine({
 			\color -> envColor,
 			\params -> [
 				\lfo4Speed,
-				\lfo4Width,
-				\lfo4Multi,
 				[
 					\lfo4Slew,
 					\lfo4Algo,
 				],
+				[
+					\lfo4Width,
+					\lfo4Multi,
+				],
 			],
 			\labelCut -> Event[
 				"Lfo4 " -> "",
+			],
+		],
+		Event[
+			\name -> "Euclidean Env",
+			\color -> envColor,
+			\params -> [
+				\eucSpeed,
+				\eucLength,
+				\eucInner,
+				\eucStep,
+			],
+			\labelCut -> Event[
+				"Euc " -> "",
 			],
 		],
 		Event[

@@ -9,6 +9,7 @@
 	\lfo2,
 	\lfo3,
 	\lfo4,
+	\euc1,
 	\env1,
 	\trigRand,
 ];
@@ -29,18 +30,19 @@
 	\filter,
 	\filterReso,
 	\filterDrive,
-	\formant,
-	\formantDepth,
-	\formantReso,
+	// \formant,
+	// \formantDepth,
+	// \formantReso,
 	\env1Trigger,
 	\envTime,
 	\lfo1Speed,
-	\lfo1Shape,
 	\lfo2Speed,
 	\lfo2Spread,
 	\lfo3Speed,
 	\lfo4Speed,
 	\lfo4Sync,
+	\euc1Speed,
+	\euc1Reset,
 	\vibratoDepth,
 	\tremoloDepth,
 	\amp,
@@ -77,15 +79,16 @@ SynthDef(\compress, {
 
 
 	// Chorus
-  chorusShape = LFNoise2.kr(chorusSpeed.dup * 0.25, mul: chorusShape);
-  combDelay = SinOsc.kr(chorusSpeed, chorusShape + [0, pi]);
-  combDelay = (combDelay * chorusDepth).range(0.0038222564329714, 0.000675685860797);//.midicps.reciprocal;
-  // combDelay = (combDelay * chorusDepth).range(60, 90).midicps.reciprocal;
-
-  audio = LinSelectX.ar(chorusDepth, [audio, CombC.ar(audio.neg, 0.02, combDelay, decaytime: 0.5 * chorusDepth.cubed, mul: 1)]);
-
-	combDelay = DelayN.kr(combDelay, 1, chorusSpeed.reciprocal * 0.5);
-  audio = LinSelectX.ar(chorusDepth, [audio, CombC.ar(audio.neg, 0.02, combDelay, decaytime: 0.5 * chorusDepth.cubed, mul: 1)]);
+	audio = DzChorus.ar(audio, chorusDepth, 2, 4, chorusSpeed, 70, 12, chorusShape, 0.1 * chorusDepth.cubed, 1);
+  // chorusShape = LFNoise2.kr(chorusSpeed.dup * 0.25, mul: chorusShape);
+  // combDelay = SinOsc.kr(chorusSpeed, chorusShape + [0, pi]);
+  // combDelay = (combDelay * chorusDepth).range(0.0038222564329714, 0.000675685860797);//.midicps.reciprocal;
+  // // combDelay = (combDelay * chorusDepth).range(60, 90).midicps.reciprocal;
+	//
+  // audio = LinSelectX.ar(chorusDepth, [audio, CombC.ar(audio.neg, 0.02, combDelay, decaytime: 0.5 * chorusDepth.cubed, mul: 1)]);
+	//
+	// combDelay = DelayN.kr(combDelay, 1, chorusSpeed.reciprocal * 0.5);
+  // audio = LinSelectX.ar(chorusDepth, [audio, CombC.ar(audio.neg, 0.02, combDelay, decaytime: 0.5 * chorusDepth.cubed, mul: 1)]);
 
   // Apply a nice subtle room effect, and then delay the incoming audio.
   // audio = audio + FreeVerb2.ar(audio[0], audio[1], reverb.sqrt, reverb);
@@ -136,7 +139,8 @@ SynthDef(\key, {
 		filterEnv = 0,
 		lfo1Speed = 0,
 		lfo1Walk = 0,
-		lfo1Shape = 1,
+		lfo1Algo = 1,
+		lfo1Slew = 0,
 		lfo1Enter = 2,
     lfo2Speed = 2,
     lfo2Spread = 0.5,
@@ -149,6 +153,10 @@ SynthDef(\key, {
 		lfo4Width = 1,
 		lfo4Multi = 1,
 		lfo4Algo = 0,
+		eucSpeed = 1,
+		eucHits = 1,
+		eucLength = 8,
+		eucOffset = 3,
 		t_lfo4Sync = 0,
 		vibratoDepth = 0,
 		tremoloDepth = 0,
@@ -172,7 +180,7 @@ SynthDef(\key, {
     pan = 0,
 		dummy = 0;
   var freq, noteOffset, resonator, resonatorDecay, audio, feedbackAudio, formantAudio, filterFreq, pink, peak, env, retrigger, env1Trigger;
-  var lfo1, lfo2, lfo2Phase, lfo3, lfo3Dust, lfo3Phasor, lfo3Trigger, lfo4, doubleLfo4, lfo4Sine, trigRand;
+  var lfo1, lfo1Phase, lfo2, lfo2Phase, lfo3, lfo4, euc1, eucReset, trigRand;
   var impulseAudio, impulseFreq;
   var full, inverse;
   var bend, mod;
@@ -180,6 +188,7 @@ SynthDef(\key, {
 
 	// One pink noise algo is shared among all voices.
 	pink = In.ar(~pinkBus.index) * 1;
+	// pink = DelayN.ar(SoundIn.ar(0), 1, 1);
 
 	bend = In.kr(~bendBus);
 	m.writeSource(\bend, bend);
@@ -188,7 +197,7 @@ SynthDef(\key, {
 	m.writeSource(\note, (note + baseNote + [0, leftNote]).linlin(44, 108, 0, 1));
 	m.writeSource(\vel, vel.linlin(0, 127, 0, 1));
 
-	retrigger = Trig1.kr(m.tapTarget(\retrigger), ControlDur.ir) + t_retrig;
+	retrigger = DzTriggerCollector.kr(m.tapTarget(\retrigger), t_retrig);
   gate = gate * (1 - retrigger);
   trigRand = TRand.kr(-1, 1, gate.at(0));
   m.writeSource(\trigRand, trigRand);
@@ -203,20 +212,20 @@ SynthDef(\key, {
   };
 
   // Envelopes
-	env1Trigger = Slope.kr(m.tapTarget(\env1Trigger, 16));
-  env1Trigger = gate - Trig1.kr(SetResetFF.kr(env1Trigger, 1 - env1Trigger), ControlDur.ir);
+	env1Trigger = DzTriggerCollector.kr(gate, m.tapTarget(\env1Trigger));
   envTime = envTime * m.tapTargetExponential(\envTime, 16);
   env = EnvGen.kr(Env.new(
-      [-1, 1, 0, -1],
+      [-1, 1, 0, 0],
       [(1 - envShape), envShape, 0.5 * envShape],
       0, 2 // curve of 4, loop at 2.
    ), env1Trigger, timeScale: envTime);
   m.writeSource(\env1, env);
-	// env.poll;
 
   // Applies lfo1 with subtle random variations.
   lfo1Speed = lfo1Speed * m.tapTargetExponential(\lfo1Speed, 4);
-  lfo1 = (SinOsc.kr(lfo1Speed, lfo1Walk * LFNoise2.kr((lfo1Walk + 0.2) * lfo1Speed, mul: 5) + [0, pi] + 0.1) * lfo1Shape).softclip;
+	lfo1Slew = lfo1Slew / lfo1Speed;
+	lfo1Phase = lfo1Walk * LFNoise2.kr((lfo1Walk + 0.2) * lfo1Speed, mul: 0.5) + [0, 0.5];
+	lfo1 = DzMultiLfo.kr(lfo1Speed, phase: lfo1Phase, slew: lfo1Slew, algo: lfo1Algo, algos: [\sine, \square, \pulse]);
   lfo1 = lfo1 * Line.kr(0, 1, lfo1Enter);
   m.writeSource(\lfo1, lfo1);
 
@@ -231,33 +240,26 @@ SynthDef(\key, {
 
   // Lfo3 is a randomizer
 	lfo3Speed = lfo3Speed * m.tapTargetExponential(\lfo3Speed, 4);
-	lfo3Dust = Dust.kr(lfo3Speed);
-	lfo3Phasor = Phasor.kr(1, ControlDur.ir * lfo3Speed, 0, 1);
-
-	// Get stereo algos, will be reduced to mono shortly.
-	lfo3Trigger = Slope.kr(Select.kr(lfo3Algo, [lfo3Phasor, lfo3Phasor, lfo3Dust, lfo3Dust]));
-	lfo3 = TRand.kr(-1, 1, lfo3Trigger);
-
-	// reduce to mono as needed.
-	lfo3 = Select.kr(lfo3Algo, [lfo3.at(0).dup, lfo3, lfo3.at(0).dup, lfo3]);
-	lfo3 = lfo3.lag2(lfo3Slew);
+	lfo3Slew = lfo3Slew / lfo3Speed;
+	lfo3 = DzMultiLfo.kr(lfo3Speed, slew: lfo3Slew, algo: lfo3Algo, algos: [\random, \stereoRandom, \dust, \stereoDust]);
   m.writeSource(\lfo3, lfo3);
 
+	// Lfo4 is a multi wave lfo.
 	lfo4Speed = lfo4Speed * m.tapTargetExponential(\lfo4Speed, 4);
+	lfo4Slew = lfo4Slew / lfo4Speed;
 	t_lfo4Sync = Slope.kr(t_lfo4Sync + m.tapTarget(\lfo4Sync));
-
-	lfo4 = Phasor.kr(t_lfo4Sync, 2 * ControlDur.ir * lfo4Speed, -1, 1, -1);
-	lfo4 = lfo4.range(-1, 1 / lfo4Width).neg.clip(-1, 1);
-	doubleLfo4 = lfo4.range(-1, 3);
-	lfo4 = lfo4.range(-1, lfo4Multi * 2 - 1).wrap(-1, 1);
-	lfo4 = Select.kr(lfo4Algo, [lfo4, lfo4.sign, SinOsc.kr(0, lfo4 * pi), SinOsc.kr(0, (lfo4 + 0.5) * pi), doubleLfo4.fold(-1, 1)]);
-	lfo4 = lfo4.lag2(lfo4Slew);
+	lfo4 = DzMultiLfo.kr(lfo4Speed, width: lfo4Width, multi: lfo4Multi, slew: lfo4Slew, t_sync: t_lfo4Sync, algo: lfo4Algo, algos: [\saw, \square, \sine, \cosine, \triangle, \random, \stereoRandom]);
 	m.writeSource(\lfo4, lfo4);
+
+	eucSpeed = eucSpeed * m.tapTargetExponential(\euc1Speed, 4);
+	eucReset = m.tapTarget(\euc1Reset);
+	euc1 = DzEuclidean.kr(LFSaw.kr(eucSpeed, 1), eucReset, eucHits, eucLength, eucOffset);
+	m.writeSource(\euc1, euc1);
 
   // If the gate is active, and so is hold, hold forever
   gate = (gate + Latch.kr(gate, Changed.kr(hold))).clip(0, 1);
 
-	portamento = (portamento + m.tapTarget(\portamento, 1)).clip(0, inf);
+	portamento = (portamento * m.tapTargetExponential(\portamento, 3));
 	noteOffset = (bend * bendSteps);
 	noteOffset = noteOffset + (detune * TRand.kr(0.5, 1, gate) * [-1, 1]);
 	noteOffset = noteOffset + baseNote + [0, leftNote];
@@ -270,7 +272,7 @@ SynthDef(\key, {
 	note = note + m.tapTarget(\freq, 24) + [0, m.tapTarget(\leftNote, 24).at(0)];
 
 	// vibrato is mono
-	vibratoDepth = (vibratoDepth *  m.tapTarget(\vibratoDepth, 6)).clip(0, 12);
+	vibratoDepth = (vibratoDepth +  m.tapTarget(\vibratoDepth, 6)).clip(0, 12);
 	note = note + (lfo1[0] * vibratoDepth);
 	freq = note.midicps;
 
@@ -284,14 +286,15 @@ SynthDef(\key, {
   // Resonator is theoretically mono to save some processing power.
   resonatorLevel = (resonatorLevel + m.tapTarget(\resonator).at(0)).clip(0, 2);
   resonatorPitchShift = resonatorPitchShift *  m.tapTargetExponential(\resonatorPitchShift, 4).at(0);
-  resonator = pink * resonatorLevel * 0.05 + feedbackAudio * gate;
+  resonator = pink * resonatorLevel;
+	resonator = resonator + feedbackAudio;
+	resonator = resonator * gate;
 
   resonator = LPF.ar(resonator, min(18000, freq[0] * resonatorPitchShift));
 
   // The hardness filter produces the illusion of hardness. Low frequencies
   // sound soft, high frequencies sound more like metal on metal.
   // Impulse is theoretically mono to save some processing power.
-	Poll.kr(t_retrig, 1, label: \gate);
   m.connect(\vel, \hardness, hardnessVel);
   hardness = hardness + (m.tapTarget(\hardness, 48).at(0)).clip(-24, 48);
   impulseAudio = BPF.ar(pink * Trig.kr(gate, 0.01), min(20000, freq[0] * hardness.round(6).midiratio));
@@ -320,21 +323,10 @@ SynthDef(\key, {
   impulse = (impulse + m.tapTarget(\impulse, 2)).clip(0, 2);
   audio = impulse * impulseAudio * 4 + audio;
 
-	// Add Formant
-  m.connect(\env1, \formant, formantEnv);
-  formant = (formant + m.tapTarget(\formant, 48)).midiratio;
-  formant = (SelectX.kr(formantNote, [880, freq]) * formant).clip(30, 20000);
-
-  formantDepth = (formantDepth + m.tapTarget(\formantDepth)).clip(0, 2);
-	formantReso = formantReso * m.tapTargetExponential(\formantReso, 0.5);
-	// formantReso.poll;
-  formantAudio = BPF.ar(audio, formant.lag(0.03), formantReso, mul: 9);
-  audio = LinSelectX.ar(formantDepth, [audio, formantAudio]);
-
   // Saturate - clean up audio DC before driving it to prevent rectification.
-  audio = LeakDC.ar(audio);
-  filterDrive = filterDrive * m.tapTargetExponential(\filterDrive, 8);
-  audio = (audio * max(filterDrive, 1)).softclip;
+  // audio = LeakDC.ar(audio);
+  // filterDrive = filterDrive * m.tapTargetExponential(\filterDrive, 8);
+  // audio = (audio * max(filterDrive, 1)).softclip;
 
   // Add trem after saturation so it doesn't get lost in the mix.
 	tremoloDepth = (tremoloDepth + m.tapTarget(\tremoloDepth)).clip(0, 1);
@@ -351,8 +343,11 @@ SynthDef(\key, {
 	// @TODO try two LPF in serial.
   filterFreq = min(20000, filterNote.linexp(0, 1, 110, freq) * filter);
 	filterReso = (filterReso + m.tapTarget(\filterReso)).clip(1, 4);
-  // audio = LPF.ar(audio, filterFreq.poll, mul: 1);
-  audio = MoogFF.ar(audio, filterFreq, filterReso, mul: 1);
+	filterReso = filterReso.linlin(1, 4, 0.7, 0.01);
+  audio = RLPF.ar(audio, filterFreq, filterReso, mul: 0.5);
+  audio = RLPF.ar(audio, filterFreq, filterReso, mul: 0.5);
+	// audio = SelectX.ar(MouseX.kr(0, 1), [RLPF.ar(audio, filterFreq, filterReso, mul: 0.5), MoogFF.ar(audio, filterFreq, filterReso, mul: 1)]);
+  // audio = MoogFF.ar(audio, filterFreq, filterReso, mul: 1);
 
 	// Feedback out before applying amplitude modulations.
 	audio = LeakDC.ar(audio);
@@ -365,7 +360,7 @@ SynthDef(\key, {
 	// Panning
   pan = pan + m.tapTarget(\pan).at(0);
   pan = Select.kr(panAlgo, [[-1, 1] + (pan * 2), [-1, 1] * pan]).clip(-1, 1);
-  audio = Pan2.ar(audio[0], pan[0]) + Pan2.ar(audio[1], pan[1]);
+  audio = LinPan2.ar(audio[0], pan[0]) + LinPan2.ar(audio[1], pan[1]);
 
   DetectSilence.ar(audio + (gate), doneAction: 2);
   Out.ar(0, audio);
