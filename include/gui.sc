@@ -284,8 +284,8 @@ AppClock.play(Routine({
 					arg subkey;
 					var widget;
 					var label;
-					widget = if (~paramMap[subkey].isKindOf(SS2ParamList)) {
-						SS2ParamSelect();
+					widget = if (~paramMap[subkey].isKindOf(NopaListParam)) {
+						NopaSelectWidget();
 					} {
 						if (subkey == \triggerButton) {
 							\triggerButton.postln;
@@ -294,10 +294,10 @@ AppClock.play(Routine({
 									~group.set(\t_retrig, 1);
 								});
 						} {
-							SS2ParamSlider();
+							NopaSliderWidget();
 						};
 					};
-					if (widget.isKindOf(SS2ParamWidget)) {
+					if (widget.isKindOf(NopaAbstractWidget)) {
 						var label;
 						~paramMap[subkey].addObserver(widget);
 						label = widget.label().asString();
@@ -314,16 +314,16 @@ AppClock.play(Routine({
 				};
 				columns = columns.add(subcolumn);
 			} {
-				var widget = if (~paramMap[key].isKindOf(SS2ParamList)) {
-					SS2ParamOptions();
+				var widget = if (~paramMap[key].isKindOf(NopaListParam)) {
+					NopaOptionWidget();
 				} {
-					var knob = SS2ParamKnob();
+					var knob = NopaKnobWidget();
 					knob;
 				};
 
 				// widget.decorator.margin = 4@24;
 				// widget.decorator.gap = 4@24;
-				if (widget.isKindOf(SS2ParamWidget)) {
+				if (widget.isKindOf(NopaAbstractWidget)) {
 					var label;
 					~paramMap[key].addObserver(widget);
 					label = widget.label().asString();

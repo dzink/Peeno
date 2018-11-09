@@ -40,7 +40,7 @@ MIDIFunc.noteOff({
 }, chan: [0,1]);
 
 Event[
-	\sustain -> SS2MidiFunc.cc(13),
+	\sustain -> NopaMidiConnection.cc(13),
 ].keysValuesDo {
 	arg key, event;
 	~paramMap[key].addEvent(event)
