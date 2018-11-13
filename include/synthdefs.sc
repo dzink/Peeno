@@ -343,11 +343,11 @@ SynthDef(\key, {
 	// @TODO try two LPF in serial.
   filterFreq = min(20000, filterNote.linexp(0, 1, 110, freq) * filter);
 	filterReso = (filterReso + m.tapTarget(\filterReso)).clip(1, 4);
-	filterReso = filterReso.linlin(1, 4, 0.7, 0.01);
-  audio = RLPF.ar(audio, filterFreq, filterReso, mul: 0.5);
-  audio = RLPF.ar(audio, filterFreq, filterReso, mul: 0.5);
+	// filterReso = filterReso.linlin(1, 4, 0.7, 0.01);
+  // audio = RLPF.ar(audio, filterFreq, filterReso, mul: 0.5);
+  // audio = RLPF.ar(audio, filterFreq, filterReso, mul: 0.5);
 	// audio = SelectX.ar(MouseX.kr(0, 1), [RLPF.ar(audio, filterFreq, filterReso, mul: 0.5), MoogFF.ar(audio, filterFreq, filterReso, mul: 1)]);
-  // audio = MoogFF.ar(audio, filterFreq, filterReso, mul: 1);
+  audio = MoogFF.ar(audio, filterFreq, filterReso, mul: 1);
 
 	// Feedback out before applying amplitude modulations.
 	audio = LeakDC.ar(audio);
